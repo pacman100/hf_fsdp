@@ -9,6 +9,7 @@ import transformers
 import typing
 
 from accelerate import Accelerator, FullyShardedDataParallelPlugin
+from accelerate.state import AcceleratorState
 from accelerate.utils import InitProcessGroupKwargs, set_seed
 from datetime import timedelta
 from datasets import load_dataset, concatenate_datasets
@@ -23,8 +24,8 @@ from transformers import (
     default_data_collator,
 )
 from tqdm import tqdm
-from together.modeling_flash_llama import LlamaForCausalLM
-
+#from together.modeling_flash_llama import LlamaForCausalLM
+from transformers import LlamaForCausalLM
 
 def main():
 
@@ -50,7 +51,7 @@ def main():
                         help='WandB ID.')
     parser.add_argument('--model_name', type=str, default="meta-llama/Llama-2-7b-hf",
                         help='Model name or path to be loaded for training.')
-    parser.add_argument('--dataset_name', type=str, default=DATASET_NAME,
+    parser.add_argument('--dataset_name', type=str, default="pubmed-llama-2-7b-tokenized-chunked",
                         help='Name or path of the dataset.')
 
     args = parser.parse_args()
@@ -73,13 +74,12 @@ def main():
 
     accelerator = Accelerator(
         gradient_accumulation_steps=GRADIENT_ACCUMULATE_EVERY,
-        mixed_precision="bf16",
         log_with="wandb",
         kwargs_handlers=[timeout],
     )
 
     accelerator.init_trackers(
-        project_name="pubmed-llama-2",
+        project_name=WANDB_PROJECT,
         init_kwargs={
             "wandb": {
                 "entity": WANDB_ENTITY,
@@ -92,6 +92,8 @@ def main():
 
     accelerator.print(f"Total GPUS: {accelerator.num_processes}")
 
+ #   accelerator.state.mixed_precision = "no"
+
     # Create fresh LlamaForCausalLM model
     model = LlamaForCausalLM.from_pretrained(
         MODEL_NAME,
@@ -99,10 +101,13 @@ def main():
         use_cache=False,
     )
 
-    model = accelerator.prepare(model)
+    model = model.to_bettertransformer()
 
     model.gradient_checkpointing_enable()
 
+    model = accelerator.prepare(model)
+
+#    accelerator.state.mixed_precision = "bf16"
     accelerator.print(f"FSDP model parameters per device: {model.num_parameters():,}")
     accelerator.print(
         f"Training a {accelerator.num_processes * model.num_parameters():,} parameter model"
@@ -115,21 +120,22 @@ def main():
         num_proc=os.cpu_count() - 1,
     )["train"]
 
-    # Optional: Select random 10% of the dataset
-    # train_dataset = train.shuffle(seed=42).select(range(0, len(train), 10))
-    # Optional: Repeat the dataset 3 times
-    # train_dataset = concatenate_datasets([train_dataset] * 3)
+    # Optional: Select random 0.1% of the dataset
+    train_dataset = train_dataset.shuffle(seed=42).select(range(0, len(train_dataset), 1000))
+    # train_dataset = train_dataset.select(range(0, len(train_dataset) - len(train_dataset)%(BATCH_SIZE*16*8)))
+    # Optional: Repeat the dataset 100 times
+    train_dataset = concatenate_datasets([train_dataset] * 100)
 
     train_loader = DataLoader(
         train_dataset,
         collate_fn=default_data_collator,
-        shuffle=True,
+        shuffle=False,
         batch_size=BATCH_SIZE,
     )
 
     # Optimizer set up
 
-    optim = torch.optim.AdamW(model.parameters(), lr=2e-5)
+    optim = torch.optim.AdamW(model.parameters(), lr=2e-5) #, weight_decay=1e-6, betas=(0.9, 0.95))
 
     # Determine number of training steps
 
@@ -141,7 +147,7 @@ def main():
     scheduler = get_cosine_schedule_with_warmup(
         optim,
         num_training_steps=max_train_steps,
-        num_warmup_steps=100,
+        num_warmup_steps=100*AcceleratorState().num_processes,
     )
 
     # prepare

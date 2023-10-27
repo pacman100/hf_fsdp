@@ -34,19 +34,18 @@ from transformers.utils import add_start_docstrings, add_start_docstrings_to_mod
 from transformers.models.llama.configuration_llama import LlamaConfig
 
 
-try:
-    from flash_attn.flash_attn_interface import (
+from flash_attn.flash_attn_interface import (
         flash_attn_func, 
         flash_attn_kvpacked_func, 
         flash_attn_qkvpacked_func,
         flash_attn_varlen_kvpacked_func, 
     )
-    from flash_attn.bert_padding import unpad_input, pad_input
-    flash_attn_v2_installed = True
-    print('>>>> Flash Attention installed')
-except ImportError:
-    flash_attn_v2_installed = False
-    raise ImportError('Please install Flash Attention: `pip install flash-attn --no-build-isolation`')
+from flash_attn.bert_padding import unpad_input, pad_input
+flash_attn_v2_installed = True
+print('>>>> Flash Attention installed')
+#except ImportError:
+#    flash_attn_v2_installed = False
+#    raise ImportError('Please install Flash Attention: `pip install flash-attn --no-build-isolation`')
 
 try:
     from flash_attn.layers.rotary import apply_rotary_emb_func
