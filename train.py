@@ -153,7 +153,7 @@ def main():
     scheduler = get_cosine_schedule_with_warmup(
         optim,
         num_training_steps=max_train_steps,
-        num_warmup_steps=10*AcceleratorState().num_processes,
+        num_warmup_steps=0*AcceleratorState().num_processes,
     )
 
     # prepare
