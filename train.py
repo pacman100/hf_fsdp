@@ -85,10 +85,10 @@ def main():
         project_name=WANDB_PROJECT,
         init_kwargs={
             "wandb": {
-                "entity": WANDB_ENTITY,
+                # "entity": WANDB_ENTITY,
                 "name": WANDB_NAME,
-                "id": WANDB_ID,
-                "resume": "must" if WANDB_ID else None,
+                # "id": WANDB_ID,
+                # "resume": "must" if WANDB_ID else None,
             }
         },
     )
