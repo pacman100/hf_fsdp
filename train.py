@@ -28,7 +28,7 @@ from tqdm import tqdm
 from transformers import LlamaForCausalLM
 from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
-replace_llama_attn_with_flash_attn()
+# replace_llama_attn_with_flash_attn()
 
 def main():
 
@@ -138,7 +138,7 @@ def main():
 
     # Optimizer set up
 
-    optim = torch.optim.AdamW(model.parameters(), lr=2e-5) #, weight_decay=1e-6, betas=(0.9, 0.95))
+    optim = torch.optim.AdamW(model.parameters(), lr=5e-5) #, weight_decay=1e-6, betas=(0.9, 0.95))
 
     # Determine number of training steps
 
@@ -150,7 +150,7 @@ def main():
     scheduler = get_cosine_schedule_with_warmup(
         optim,
         num_training_steps=max_train_steps,
-        num_warmup_steps=100*AcceleratorState().num_processes,
+        num_warmup_steps=10*AcceleratorState().num_processes,
     )
 
     # prepare
