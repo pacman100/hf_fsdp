@@ -71,7 +71,7 @@ def main():
     MODEL_NAME = args.model_name
     DATASET_NAME = args.dataset_name
 
-    set_seed(42)
+    set_seed(100)
 
     timeout = InitProcessGroupKwargs(timeout=timedelta(seconds=1_000_000))
 
