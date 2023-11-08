@@ -26,6 +26,9 @@ from transformers import (
 from tqdm import tqdm
 #from together.modeling_flash_llama import LlamaForCausalLM
 from transformers import LlamaForCausalLM
+from llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+
+replace_llama_attn_with_flash_attn()
 
 def main():
 
@@ -97,11 +100,11 @@ def main():
     # Create fresh LlamaForCausalLM model
     model = LlamaForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=torch.bfloat16,
+        # torch_dtype=torch.bfloat16,
         use_cache=False,
     )
-
-    model = model.to_bettertransformer()
+    
+    # model = model.to_bettertransformer()
 
     model.gradient_checkpointing_enable()
 
