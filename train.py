@@ -71,7 +71,7 @@ def main():
     MODEL_NAME = args.model_name
     DATASET_NAME = args.dataset_name
 
-    set_seed(100)
+    set_seed(42)
 
     timeout = InitProcessGroupKwargs(timeout=timedelta(seconds=1_000_000))
 
@@ -80,6 +80,7 @@ def main():
         log_with="wandb",
         kwargs_handlers=[timeout],
     )
+    accelerator.state.fsdp_plugin.activation_checkpointing = True
 
     accelerator.init_trackers(
         project_name=WANDB_PROJECT,
@@ -106,7 +107,7 @@ def main():
     
     # model = model.to_bettertransformer()
 
-    model.gradient_checkpointing_enable()
+    # model.gradient_checkpointing_enable()
 
     model = accelerator.prepare(model)
 
@@ -132,8 +133,10 @@ def main():
     train_loader = DataLoader(
         train_dataset,
         collate_fn=default_data_collator,
-        shuffle=False,
+        shuffle=True,
         batch_size=BATCH_SIZE,
+        num_workers=4,
+        pin_memory=True,
     )
 
     # Optimizer set up
@@ -150,7 +153,7 @@ def main():
     scheduler = get_cosine_schedule_with_warmup(
         optim,
         num_training_steps=max_train_steps,
-        num_warmup_steps=10*AcceleratorState().num_processes,
+        num_warmup_steps=0*AcceleratorState().num_processes,
     )
 
     # prepare
@@ -209,7 +212,7 @@ def main():
             accelerator.backward(loss)
             step_loss = accelerator.reduce(loss.detach().clone(), reduction="mean").item()
 
-            accelerator.log({"loss": step_loss}, step=completed_steps)
+            accelerator.log({"loss": step_loss  / GRADIENT_ACCUMULATE_EVERY}, step=completed_steps)
 
             # if accelerator.sync_gradients:
             #     accelerator.clip_grad_norm_(model.parameters(), 1.0)
