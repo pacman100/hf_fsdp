@@ -138,7 +138,7 @@ def main():
 
     # Optimizer set up
 
-    optim = torch.optim.AdamW(model.parameters(), lr=5e-6) #, weight_decay=1e-6, betas=(0.9, 0.95))
+    optim = torch.optim.AdamW(model.parameters(), lr=5e-5) #, weight_decay=1e-6, betas=(0.9, 0.95))
 
     # Determine number of training steps
 
