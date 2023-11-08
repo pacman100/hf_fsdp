@@ -124,10 +124,10 @@ def main():
     )["train"]
 
     # Optional: Select random 0.1% of the dataset
-    train_dataset = train_dataset.shuffle(seed=42).select(range(0, len(train_dataset), 1000))
+    # train_dataset = train_dataset.shuffle(seed=42).select(range(0, len(train_dataset), 1000))
     # train_dataset = train_dataset.select(range(0, len(train_dataset) - len(train_dataset)%(BATCH_SIZE*16*8)))
     # Optional: Repeat the dataset 100 times
-    train_dataset = concatenate_datasets([train_dataset] * 100)
+    # train_dataset = concatenate_datasets([train_dataset] * 100)
 
     train_loader = DataLoader(
         train_dataset,
