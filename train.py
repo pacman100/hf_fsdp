@@ -199,8 +199,12 @@ def main():
     # Training
 
     model.train()
+    print_fist_batch = True
     for batch in train_loader:
         with accelerator.accumulate(model):
+            if print_fist_batch:
+                print(batch)
+                print_fist_batch = False
             loss = model(**batch).loss
             accelerator.backward(loss)
             step_loss = accelerator.reduce(loss.detach().clone()).item()
